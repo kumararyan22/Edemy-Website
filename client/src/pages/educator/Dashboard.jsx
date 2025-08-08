@@ -3,20 +3,37 @@ import { useState } from "react";
 import { AppContext } from "../../context/AppContext";
 import { assets, dummyDashboardData } from "../../assets/assets";
 import Loading from "../../components/student/Loading";
+import axios from "axios";
+import { toast } from "react-toastify";
 
 const Dashboard = () => {
-  const { currency } = useContext(AppContext);
+  const { currency, backendUrl, isEducator, getToken } = useContext(AppContext);
   const [dashboardData, setDashboardData] = useState(null);
 
   const fetchDashboardData = async () => {
-    setDashboardData(dummyDashboardData);
+    try {
+      const token = await getToken()
+      const { data } = await axios.get(backendUrl + '/api/educator/dashboard',
+        {headers: { Authorization: `Bearer ${token}` }});
+
+        if(data.success){
+          setDashboardData(data.dashboardData)
+        } else{
+          toast.error(data.message)
+        }
+      
+    } catch (error) {
+      toast.error(error.message)
+    }
   };
 
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  const myName = "Aryan Kumar";
+    if(isEducator)
+    {
+      fetchDashboardData();
+    }
+  }, [isEducator]);
+  
 
   return dashboardData ? (
     <div className="min-h-screen flex flex-col justify-between items-start gap-8 md:p-8 md:pb-0 p-4 pt-8 pb-0">
@@ -76,11 +93,10 @@ const Dashboard = () => {
                     </td>
                     <td className="md:px-4 px-2 py-3 flex items-center space-x-3 ">
                       <img
-                        src="https://img.clerk.com/eyJ0eXBlIjoicHJveHkiLCJzcmMiOiJodHRwczovL2ltYWdlcy5jbGVyay5kZXYvb2F1dGhfZ29vZ2xlL2ltZ18yeGx3RGtPR2ZTZVEwaDdEeHNyQlVqbWFCRjUifQ?width=160"
-                        alt="Portfolio"
+                        src={item.student.imageUrl}
                         className="w-9 h-9 rounded-full"
                       />
-                      <span className="truncate">{myName}</span>
+                      <span className="truncate">{item.student.name}</span>
                     </td>
                     <td className="pc-4 py-3 truncate">{item.courseTitle}</td>
                   </tr>
